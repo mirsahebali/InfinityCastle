@@ -359,11 +359,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\screens.h" />
+    <ClInclude Include="..\..\..\src\**\*.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\main.c" />
-    <ClCompile Include="..\..\..\src\map.c" />
+    <ClCompile Include="..\..\..\src\**\*.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\raylib_game.rc" />
