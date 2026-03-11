@@ -37,8 +37,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0981CA98-E4A5-4DF1-987F-A41D09131EFC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>raylib_game</RootNamespace>
-    <ProjectName>raylib_game</ProjectName>
+    <RootNamespace>InfinityCastle</RootNamespace>
+    <ProjectName>InfinityCastle</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -362,12 +362,8 @@
     <ClInclude Include="..\..\..\src\screens.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\raylib_game.c" />
-    <ClCompile Include="..\..\..\src\screen_logo.c" />
-    <ClCompile Include="..\..\..\src\screen_title.c" />
-    <ClCompile Include="..\..\..\src\screen_options.c" />
-    <ClCompile Include="..\..\..\src\screen_gameplay.c" />
-    <ClCompile Include="..\..\..\src\screen_ending.c" />
+    <ClCompile Include="..\..\..\src\main.c" />
+    <ClCompile Include="..\..\..\src\map.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\raylib_game.rc" />
