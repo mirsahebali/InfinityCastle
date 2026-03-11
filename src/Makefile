@@ -34,6 +34,7 @@ PROJECT_VERSION       ?= 1.0
 PROJECT_BUILD_PATH    ?= .
 PROJECT_SOURCE_FILES  ?= \
     map.c \
+		main.c
 
 # raylib library variables
 RAYLIB_SRC_PATH       ?= ../../raylib/src
