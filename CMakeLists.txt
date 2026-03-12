@@ -31,6 +31,8 @@ FetchContent_MakeAvailable(carena.h)
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
 
+include_directories(external)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 
