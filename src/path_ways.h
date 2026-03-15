@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "carena.h"
+#include "external/carena.h/carena.h"
 
 #include "raylib.h"
 

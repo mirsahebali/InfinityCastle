@@ -18,15 +18,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 
-FetchContent_Declare(
-  carena
-  GIT_REPOSITORY https://github.com/mirsahebali/carena.h.git
-  GIT_TAG        origin/main
-  GIT_SHALLOW    ON
-)
-
-FetchContent_MakeAvailable(carena)
-
 # Our Project
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
@@ -49,8 +40,6 @@ else()
     )
     #DEPENDS ${PROJECT_NAME}
 endif()
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${carena_SOURCE_DIR})
 
 if(RUN_TESTS)
   target_compile_definitions(${PROJECT_NAME} PRIVATE RUN_TESTS)

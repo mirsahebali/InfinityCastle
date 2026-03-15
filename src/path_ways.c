@@ -1,6 +1,6 @@
 #include "path_ways.h"
 
-#include "carena.h"
+#include "external/carena.h/carena.h"
 #include "raylib.h"
 
 #include "raymath.h"
