@@ -1,5 +1,9 @@
 ## Getting Started with building this
 
+```bash
+git clone --recurse-submodules https://github.com/mirsahebali/InfinityCastle.git
+```
+
 #### Linux
 When setting up this project on linux for the first time, install the dependencies from this page:
 ([Working on GNU Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux))

@@ -18,6 +18,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 
+FetchContent_Declare(
+  carena
+  GIT_REPOSITORY https://github.com/mirsahebali/carena.h.git
+  GIT_TAG        origin/main
+  GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(carena)
+
 # Our Project
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
@@ -41,18 +50,14 @@ else()
     #DEPENDS ${PROJECT_NAME}
 endif()
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${carena_SOURCE_DIR})
+
 if(RUN_TESTS)
   target_compile_definitions(${PROJECT_NAME} PRIVATE RUN_TESTS)
 endif()
 
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib m)
-
-find_library(MATH_LIBRARY m)
-if(MATH_LIBRARY)
-    target_link_libraries(${PROJECT_NAME} ${MATH_LIBRARY})
-endif()
-
 
 # Web Configurations
 if ("${PLATFORM}" STREQUAL "Web")

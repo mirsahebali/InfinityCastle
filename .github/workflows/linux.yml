@@ -60,6 +60,7 @@ jobs:
     - name: Build Product
       run: |
         cd ${{ env.PROJECT_NAME }}/src
+        git clone --depth=1 "https://github.com/mirsahebali/carena.h" .
         make PLATFORM=PLATFORM_DESKTOP BUILD_MODE=RELEASE PROJECT_CUSTOM_FLAGS=${{ env.PROJECT_CUSTOM_FLAGS }} PROJECT_BUILD_PATH=. RAYLIB_SRC_PATH=../../raylib/src
 
     - name: Generate Artifacts

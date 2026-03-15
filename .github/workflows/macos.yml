@@ -87,6 +87,7 @@ jobs:
     - name: Build Product
       run: |
         cd ${{ env.PROJECT_NAME }}/src
+        git clone --depth=1 "https://github.com/mirsahebali/carena.h" .
 
         # Build project x86_64 binary
         # TODO: Link with x86_64 raylib library: libraylib_x86_64.a
