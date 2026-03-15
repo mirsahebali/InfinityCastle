@@ -61,7 +61,8 @@ jobs:
     - name: Build Product
       run: |
         cd ${{ env.PROJECT_NAME }}/src
-        git clone --depth=1 "https://github.com/mirsahebali/carena.h" .
+        git clone --depth=1 "https://github.com/mirsahebali/carena.h" carena
+        cp carena/carena.h .
         make PLATFORM=PLATFORM_WEB BUILD_MODE=RELEASE EMSDK_PATH="D:/a/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}/emsdk-cache/emsdk-main" PROJECT_BUILD_PATH=. RAYLIB_SRC_PATH=../../raylib/src -B
 
     - name: Generate Artifacts

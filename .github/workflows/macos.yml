@@ -87,8 +87,9 @@ jobs:
     - name: Build Product
       run: |
         cd ${{ env.PROJECT_NAME }}/src
-        git clone --depth=1 "https://github.com/mirsahebali/carena.h" .
+        git clone --depth=1 "https://github.com/mirsahebali/carena.h" carena
 
+        cp carena/carena.h .
         # Build project x86_64 binary
         # TODO: Link with x86_64 raylib library: libraylib_x86_64.a
         make PLATFORM=PLATFORM_DESKTOP BUILD_MODE=RELEASE PROJECT_CUSTOM_FLAGS=${{ env.PROJECT_CUSTOM_FLAGS }} PROJECT_BUILD_PATH=. RAYLIB_SRC_PATH=../../raylib/src PROJECT_CUSTOM_FLAGS="-target x86_64-apple-macos10.12"
