@@ -19,18 +19,17 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(raylib)
 
 FetchContent_Declare(
-  carena.h
+  carena
   GIT_REPOSITORY https://github.com/mirsahebali/carena.h.git
   GIT_TAG        origin/main
   GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(carena.h)
+FetchContent_MakeAvailable(carena)
 
 # Our Project
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
-
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
@@ -51,8 +50,20 @@ else()
     #DEPENDS ${PROJECT_NAME}
 endif()
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${carena_SOURCE_DIR})
+
+if(RUN_TESTS)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE RUN_TESTS)
+endif()
+
 #set(raylib_VERBOSE 1)
-target_link_libraries(${PROJECT_NAME} raylib)
+target_link_libraries(${PROJECT_NAME} raylib m)
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(${PROJECT_NAME} ${MATH_LIBRARY})
+endif()
+
 
 # Web Configurations
 if ("${PLATFORM}" STREQUAL "Web")
@@ -66,4 +77,14 @@ if (APPLE)
     target_link_libraries(${PROJECT_NAME} "-framework IOKit")
     target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
     target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
+endif()
+
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(
+    CMAKE_C_FLAGS
+    "${CMAKE_C_FLAGS} -g -Wextra -Wall  -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer"
+  )
+  target_link_options(${PROJECT_NAME}
+    BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address
+  )
 endif()
