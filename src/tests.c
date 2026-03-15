@@ -5,7 +5,7 @@
 
 #include "tests.h"
 
-#include "external/carena.h/carena.h"
+#include "carena.h"
 
 #include "path_ways.h"
 #include "raylib.h"

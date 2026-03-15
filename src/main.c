@@ -31,7 +31,7 @@
 #include "utils.h"
 
 #define CARENA_IMPLEMENTATION
-#include "external/carena.h/carena.h"
+#include "carena.h"
 
 #if defined(RUN_TESTS)
 #include "tests.h"
