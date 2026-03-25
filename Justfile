@@ -24,3 +24,6 @@ release:
 
 clean:
   rm -rf build tests-out
+
+dbg:
+  gf2 ./build/InfinityCastle/InfinityCastle

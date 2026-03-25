@@ -2,6 +2,7 @@
 #define PATH_WAYS_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "carena.h"
 
@@ -20,7 +21,7 @@ typedef struct
 
 typedef PathNode *PathNodeRef;
 
-typedef PathNode **NodeList;
+typedef PathNode *NodeList;
 
 typedef struct
 {
@@ -31,20 +32,20 @@ typedef struct
 
 PathGraph pathGraphInit(Arena *arena, size_t capacity);
 
-PathNodeRef createPathNode(Arena *arena, Vector2 pos);
+PathNode createPathNode(Vector2 pos);
 
 void addPathNode(PathGraph *graph, PathNodeRef data);
 
 void connectPathNode(PathGraph *graph, size_t src_index, size_t dest_index);
 
-PathNodeRef getPathNode(PathGraph *graph, size_t src_index);
+PathNode getPathNode(PathGraph *graph, size_t src_index);
 
 void DrawPathNodes(PathGraph *graph);
 
-PathGraph generateRandomGraph(Arena *arena);
-
 // Algorithmic agnostic graph path implementation -- End
 
-PathGraph generateOrganicPaths(Arena *arena, Vector2 seed_point);
+PathGraph generateRandomGraph(Arena *arena);
+
+PathGraph generateCircularPaths(Arena *arena, Vector2 seed_point, uint32_t depth, int angle, int direction);
 
 #endif // !PATH_WAYS_H

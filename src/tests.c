@@ -1,6 +1,8 @@
 
 #include <assert.h>
+#include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "tests.h"
@@ -11,14 +13,42 @@
 #include "raylib.h"
 #include "utils.h"
 
-void test_ajd_graph_list()
+int tests = 0;
+
+int cmp_uint64(const void *a, const void *b)
+{
+    u64 ua = *(const u64 *)a;
+    u64 ub = *(const u64 *)b;
+
+    if (ua < ub)
+        return -1;
+    if (ua > ub)
+        return 1;
+    return 0;
+}
+
+int cmp_uint32(const void *a, const void *b)
+{
+    u32 ua = *(const u32 *)a;
+    u32 ub = *(const u32 *)b;
+
+    if (ua < ub)
+        return -1;
+    if (ua > ub)
+        return 1;
+    return 0;
+}
+
+void testAjdGraphList()
 {
     Arena scratch = arena_init(10 << 20);
     PathGraph g = pathGraphInit(&scratch, 16);
 
     for (int i = 0; i < 10; i++)
     {
-        addPathNode(&g, createPathNode(&scratch, VEC2(GetRandomValue(1, 100), GetRandomValue(1, 100))));
+
+        PathNode newNode = createPathNode(VEC2(GetRandomValue(1, 100), GetRandomValue(1, 100)));
+        addPathNode(&g, &newNode);
     }
 
     for (int i = 0; i < GetRandomValue(10, 100); i++)
@@ -32,12 +62,12 @@ void test_ajd_graph_list()
 
     for (size_t i = 0; i < g.size; i++)
     {
-        PathNodeRef node = getPathNode(&g, i);
-        for (size_t j = 0; j < node->edgeCount; j++)
+        PathNode node = getPathNode(&g, i);
+        for (size_t j = 0; j < node.edgeCount; j++)
         {
-            PathNodeRef neigh = g.nodes[node->neighbours[j]];
-            printf("(neigh->pos.x = %f,", neigh->pos.x);
-            printf("neigh->pos.y = %f) -> ", neigh->pos.y);
+            PathNode neigh = g.nodes[node.neighbours[j]];
+            printf("(neigh->pos.x = %f,", neigh.pos.x);
+            printf("neigh->pos.y = %f) -> ", neigh.pos.y);
         }
         printf("\n");
     }
@@ -45,7 +75,121 @@ void test_ajd_graph_list()
     arena_destroy(&scratch);
 }
 
-void run_tests(void)
+void testID64Generation(void)
 {
-    test_ajd_graph_list();
+    int width = 1000;
+    int height = 1000;
+    Arena arena = arena_init(80 << 20);
+    uint64_t *array = ARRAY_INIT(&arena, uint64_t);
+    for (int y = -height; y < height; y++)
+    {
+        for (int x = -width; x < width; x++)
+
+        {
+            uint64_t uID = genUniqueU64(x, y);
+            array = ARRAY_PUSH(array, uint64_t, &uID);
+        }
+    }
+
+    int count = ARRAY_LENGTH(array, uint64_t);
+    int dups = 0;
+
+    qsort(array, count, sizeof(uint64_t), cmp_uint64);
+
+    for (int i = 1; i < count; i++)
+    {
+        if (array[i] == array[i - 1])
+        {
+            dups++;
+        }
+    }
+
+    printf("dups = %d\n", dups);
+    assert(dups == 0);
+    arena_destroy(&arena);
+}
+
+void testID32Generation(void)
+{
+    int width = 1000;
+    int height = 1000;
+    Arena arena = arena_init(80 << 20);
+    u32 *array = ARRAY_INIT(&arena, u32);
+    for (int y = -height; y < height; y++)
+    {
+        for (int x = -width; x < width; x++)
+
+        {
+            uint64_t uID = genUniqueU32(x, y);
+            array = ARRAY_PUSH(array, u32, &uID);
+        }
+    }
+
+    int count = ARRAY_LENGTH(array, u32);
+    int dups = 0;
+
+    qsort(array, count, sizeof(u32), cmp_uint32);
+
+    for (int i = 1; i < count; i++)
+    {
+        if (array[i] == array[i - 1])
+        {
+            dups++;
+        }
+    }
+
+    printf("dups = %d\n", dups);
+    assert(dups == 0);
+    arena_destroy(&arena);
+}
+
+void testUnmaskBits(void)
+{
+    for (int i = 0; i < 1999; i++)
+    {
+        i16 left = GetRandomValue(INT16_MIN, INT16_MAX);
+        i16 right = GetRandomValue(INT16_MIN, INT16_MAX);
+        u32 input = genUniqueU32(left, right);
+        UnMaskedBitsI16 res = unMaskI16(input);
+        assert(res.left == left);
+        assert(res.right == right);
+    }
+
+    for (int i = 0; i < 1999; i++)
+    {
+        i32 left = GetRandomValue(INT32_MIN, INT32_MAX);
+        i32 right = GetRandomValue(INT32_MIN, INT32_MAX);
+        u64 input = genUniqueU64(left, right);
+        UnMaskedBitsI32 res = unMaskI32(input);
+        assert(res.left == left);
+        assert(res.right == right);
+    }
+}
+
+static inline void fnRun(const char *message, void (*func)(void));
+static void endTests(void);
+
+void runTests(void)
+{
+    printf("Running tests...\n");
+    fnRun("test adjacency list", testAjdGraphList);
+    fnRun("test unique i64 id generation", testID64Generation);
+    fnRun("test unique i32 id generation", testID32Generation);
+    fnRun("test unique unmasking", testUnmaskBits);
+    endTests();
+}
+
+static inline void fnRun(const char *message, void (*func)(void))
+{
+    tests++;
+    printf("------\n");
+    printf("Test Started: %s\n", message);
+    func();
+    printf("Test Passed: %s\n", message);
+    printf("------\n");
+}
+
+static void endTests(void)
+{
+    printf("Tests Complete! :)\n");
 }

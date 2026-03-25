@@ -9,7 +9,7 @@
  *   Raylib credits:
  *   Copyright (c) 2021 Ramon Santamaria (@raysan5)
  *
- *  Game credits:
+ *  Project credits:
  *  Copyright (c) 2026 Mir Saheb Ali (@mirsahebali)
  ********************************************************************************************/
 
@@ -18,6 +18,7 @@
 #include "external/stb_perlin.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,8 @@
 #define CARENA_IMPLEMENTATION
 #include "carena.h"
 
+#include "external/stb_perlin.h"
+
 #if defined(RUN_TESTS)
 #include "tests.h"
 #endif
@@ -40,30 +43,31 @@
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
 #endif
-static const int screenWidth = 800;
-static const int screenHeight = 450;
+static const int screenWidth = 1920;
+static const int screenHeight = 1080;
 
 static void GameInit(void);
 static void GameLoop(void);
+static void GameControls(void);
 static void GameUpdate(void);
 static void GameDraw(void);
 static void GameEnd(void);
 
 // INFO: global state from 'global_state.h'
 float mouseSensitivity = 1.0f;
-Camera3D camera = {0};
+Camera3D camera3D = {0};
+Camera2D camera2D = {0};
 float mapWidth = 0.0f;
 float mapHeight = 0.0f;
 Vector2 mapOffset = {0};
 int seed = 0;
+int gridSpacing = 50;
 
 int main(void)
 {
 #if defined(RUN_TESTS)
-    printf("Running tests...\n");
-    run_tests();
-    printf("Tests Complete! :)\n");
-    exit(0);
+    runTests();
+    return 0;
 #endif
 
     GameInit();
@@ -86,8 +90,10 @@ int main(void)
 bool isMapChanged = false;
 float mapScale = 0.0f;
 
-Arena scratch;
-PathGraph pathGraph;
+float delta = 0.0f;
+Arena arena = {0};
+BuildingArray buildings = NULL;
+const float CAMERA_MOVEMENT_SPEED = 100.0f;
 
 static void GameInit(void)
 {
@@ -98,11 +104,16 @@ static void GameInit(void)
 
     mouseSensitivity = 1.0f;
 
-    camera.position = VEC3(0.2, 0.4, 0.2);
-    camera.target = VEC3(0.2, 0.4, 0.2);
-    camera.up = VEC3(0.0f, 1.0f, 0.0f);
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+    camera3D.position = VEC3(0.0f, 2.0f, 4.0f);
+    camera3D.target = VEC3(0.0, 2.0f, 0.0f);
+    camera3D.up = VEC3(0.0f, 1.0f, 0.0f);
+    camera3D.fovy = 60.0f;
+    camera3D.projection = CAMERA_PERSPECTIVE;
+
+    camera2D.target = VEC2(screenWidth / 2.0, screenHeight / 2.0);
+    camera2D.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+    camera2D.rotation = 0.0f;
+    camera2D.zoom = 1.0f;
 
     mapWidth = screenHeight;
     mapHeight = screenHeight;
@@ -111,26 +122,51 @@ static void GameInit(void)
 
     mapScale = 0.5f;
 
-    scratch = arena_init(10 << 20);
-    pathGraph = generateOrganicPaths(&scratch, VEC2(screenWidth / 2.0, screenHeight / 2.0));
+    arena = arena_init(20 << 20); // 20 MB
+    buildings = generateBuildings(&arena, 10, 10, 0, 0, gridSpacing);
+    assert(ARRAY_LENGTH(buildings, Building) != 0);
 }
 
 // Update and draw game frame
 static void GameLoop(void)
 {
+    GameControls();
     GameUpdate();
     GameDraw();
 }
 
+static void GameControls(void)
+{
+    camera2D.target.x -= IsKeyDown(KEY_H) * CAMERA_MOVEMENT_SPEED * delta;
+    camera2D.target.y -= IsKeyDown(KEY_J) * CAMERA_MOVEMENT_SPEED * delta;
+    camera2D.target.y += IsKeyDown(KEY_K) * CAMERA_MOVEMENT_SPEED * delta;
+    camera2D.target.x += IsKeyDown(KEY_L) * CAMERA_MOVEMENT_SPEED * delta;
+
+    // Uses log scaling to provide consistent zoom speed
+    camera2D.zoom = expf(logf(camera2D.zoom) + ((float)GetMouseWheelMove() * 0.1f));
+    if (camera2D.zoom > 3.0f)
+        camera2D.zoom = 3.0f;
+    else if (camera2D.zoom < 0.1f)
+        camera2D.zoom = 0.1f;
+
+    // camera2D reset (zoom and rotation)
+    if (IsKeyPressed(KEY_R))
+    {
+        camera2D.zoom = 1.0f;
+        camera2D.rotation = 0.0f;
+    }
+}
+
 static void GameUpdate(void)
 {
-    float dt = GetFrameTime();
+
+    delta = GetFrameTime();
     float offsetChange = 1.0f;
     if (isMapChanged)
     {
         isMapChanged = false;
     }
-    UpdateCamera(&camera, CAMERA_FREE);
+    UpdateCamera(&camera3D, CAMERA_THIRD_PERSON);
 
     if (IsKeyDown(KEY_EQUAL))
     {
@@ -148,25 +184,25 @@ static void GameUpdate(void)
     if (IsKeyDown(KEY_L))
     {
         isMapChanged = true;
-        mapOffset.x += offsetChange * dt;
+        mapOffset.x += offsetChange * delta;
     }
 
     if (IsKeyDown(KEY_H))
     {
         isMapChanged = true;
-        mapOffset.x -= offsetChange * dt;
+        mapOffset.x -= offsetChange * delta;
     }
 
     if (IsKeyDown(KEY_J))
     {
         isMapChanged = true;
-        mapOffset.y -= offsetChange * dt;
+        mapOffset.y -= offsetChange * delta;
     }
 
     if (IsKeyDown(KEY_K))
     {
         isMapChanged = true;
-        mapOffset.y += offsetChange * dt;
+        mapOffset.y += offsetChange * delta;
     }
 }
 
@@ -175,9 +211,14 @@ static void GameDraw(void)
     BeginDrawing();
     {
         ClearBackground(RAYWHITE);
-        DrawPathNodes(&pathGraph);
-        BeginMode3D(camera);
+        // BeginMode2D(camera2D);
+        // {
+        //     DrawBuidlingsTopDownView(buildings);
+        // }
+        // EndMode2D();
+        BeginMode3D(camera3D);
         {
+            DrawBuildingModels(buildings);
         }
         EndMode3D();
     }
@@ -189,6 +230,7 @@ static void GameDraw(void)
 
 static void GameEnd(void)
 {
+    arena_destroy(&arena);
     // De-Initialization:
     CloseAudioDevice();
     CloseWindow();

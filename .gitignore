@@ -64,6 +64,9 @@ dkms.conf
 .cache
 compile_commands.json
 
+# Cloned Raylib Files
+raylib
+
 # Build folder
 [Bb]uild
 

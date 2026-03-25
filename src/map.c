@@ -10,7 +10,6 @@
 
 const int MAP_GRID_LINE_WIDTH = 1;
 
-void DrawMapGrid(Vector2 pos, int width, int height, int lines, Color border);
 void DrawMap(BuildingType mapData[MAP_MAX][MAP_MAX], Vector2 pos, int width, int height, int seed, Color border)
 {
     int spacing = width / MAP_MAX;
@@ -59,11 +58,11 @@ void DrawMap(BuildingType mapData[MAP_MAX][MAP_MAX], Vector2 pos, int width, int
         }
     }
 #ifndef NDEBUG
-    DrawMapGrid(pos, width, height, MAP_MAX, border);
+    DrawMapGridLines(pos, width, height, MAP_MAX, border);
 #endif /* ifndef  NDEBUG */
 }
 
-void DrawMapGrid(Vector2 pos, int width, int height, int lines, Color border)
+void DrawMapGridLines(Vector2 pos, int width, int height, int lines, Color border)
 {
     Vector2 end_pos = VEC2(pos.x + width, pos.y + height);
     int spacing = width / lines;
@@ -77,5 +76,24 @@ void DrawMapGrid(Vector2 pos, int width, int height, int lines, Color border)
     {
         DrawLineEx(VEC2(pos.x, y), VEC2(pos.x + width, y), MAP_GRID_LINE_WIDTH, border);
         y += spacing;
+    }
+}
+
+void DrawMapGridSpaces(Vector2 pos, int width, int height, int spaces, Color border)
+{
+    Vector2 end_pos = VEC2(pos.x + width, pos.y + height);
+    int lines = width / spaces;
+    for (int x = pos.x; x <= end_pos.x;)
+    {
+        DrawLineEx(VEC2(x, pos.y), VEC2(x, pos.y + height), MAP_GRID_LINE_WIDTH, border);
+
+        DrawLineEx(VEC2(x, pos.y), VEC2(x, pos.y + height), MAP_GRID_LINE_WIDTH, border);
+        x += spaces;
+    }
+
+    for (int y = pos.y; y <= end_pos.y;)
+    {
+        DrawLineEx(VEC2(pos.x, y), VEC2(pos.x + width, y), MAP_GRID_LINE_WIDTH, border);
+        y += spaces;
     }
 }
