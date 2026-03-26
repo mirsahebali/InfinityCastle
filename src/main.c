@@ -14,6 +14,7 @@
  ********************************************************************************************/
 
 #include "raylib.h"
+#include "rlgl.h"
 
 #include "external/stb_perlin.h"
 
@@ -43,8 +44,12 @@
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
 #endif
-static const int screenWidth = 1920;
-static const int screenHeight = 1080;
+static const int SCREEN_WIDTH = 1920;
+static const int SCREEN_HEIGHT = 1080;
+static const float VIEW_DISTANCE = 10000.0f;
+static const float CAMERA_MOVEMENT_SPEED = 0.2f;
+static const float MOUSE_SENSITIVITY = 0.09f;
+static const float ZOOM_SCALING = 2.0f;
 
 static void GameInit(void);
 static void GameLoop(void);
@@ -93,30 +98,31 @@ float mapScale = 0.0f;
 float delta = 0.0f;
 Arena arena = {0};
 BuildingArray buildings = NULL;
-const float CAMERA_MOVEMENT_SPEED = 100.0f;
+const float CAMERA_2D_MOVEMENT_SPEED = 100.0f;
 
 static void GameInit(void)
 {
     // Initialization:
-    InitWindow(screenWidth, screenHeight, "Infinity Castle");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Infinity Castle");
 
     InitAudioDevice(); // Initialize audio device
 
     mouseSensitivity = 1.0f;
-
-    camera3D.position = VEC3(0.0f, 2.0f, 4.0f);
-    camera3D.target = VEC3(0.0, 2.0f, 0.0f);
-    camera3D.up = VEC3(0.0f, 1.0f, 0.0f);
+    rlSetClipPlanes(1.0f, VIEW_DISTANCE);
+    // camera3D.position = VEC3(0.0f, 2.0f, 4.0f);
+    camera3D.position = VEC3(0, 2, 400);
+    camera3D.target = VEC3(0, 0, 0);
+    camera3D.up = VEC3(0, 1, 0);
     camera3D.fovy = 60.0f;
     camera3D.projection = CAMERA_PERSPECTIVE;
 
-    camera2D.target = VEC2(screenWidth / 2.0, screenHeight / 2.0);
-    camera2D.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
+    camera2D.target = VEC2(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0);
+    camera2D.offset = (Vector2){SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f};
     camera2D.rotation = 0.0f;
     camera2D.zoom = 1.0f;
 
-    mapWidth = screenHeight;
-    mapHeight = screenHeight;
+    mapWidth = SCREEN_HEIGHT;
+    mapHeight = SCREEN_HEIGHT;
     mapOffset = VEC2(0, 0);
     seed = 100;
 
@@ -137,10 +143,10 @@ static void GameLoop(void)
 
 static void GameControls(void)
 {
-    camera2D.target.x -= IsKeyDown(KEY_H) * CAMERA_MOVEMENT_SPEED * delta;
-    camera2D.target.y -= IsKeyDown(KEY_J) * CAMERA_MOVEMENT_SPEED * delta;
-    camera2D.target.y += IsKeyDown(KEY_K) * CAMERA_MOVEMENT_SPEED * delta;
-    camera2D.target.x += IsKeyDown(KEY_L) * CAMERA_MOVEMENT_SPEED * delta;
+    camera2D.target.x -= IsKeyDown(KEY_H) * CAMERA_2D_MOVEMENT_SPEED * delta;
+    camera2D.target.y -= IsKeyDown(KEY_J) * CAMERA_2D_MOVEMENT_SPEED * delta;
+    camera2D.target.y += IsKeyDown(KEY_K) * CAMERA_2D_MOVEMENT_SPEED * delta;
+    camera2D.target.x += IsKeyDown(KEY_L) * CAMERA_2D_MOVEMENT_SPEED * delta;
 
     // Uses log scaling to provide consistent zoom speed
     camera2D.zoom = expf(logf(camera2D.zoom) + ((float)GetMouseWheelMove() * 0.1f));
@@ -155,6 +161,32 @@ static void GameControls(void)
         camera2D.zoom = 1.0f;
         camera2D.rotation = 0.0f;
     }
+
+    if (IsKeyPressed(KEY_R))
+    {
+
+        camera3D.position = VEC3(0, 2, 400);
+        camera3D.target = VEC3(0, 0, 0);
+        camera3D.up = VEC3(0, 1, 0);
+        camera3D.fovy = 60.0f;
+        camera3D.projection = CAMERA_PERSPECTIVE;
+    }
+
+    if (IsKeyPressed(KEY_P))
+    {
+        camera3D.projection = camera3D.projection == CAMERA_PERSPECTIVE ? CAMERA_ORTHOGRAPHIC : CAMERA_PERSPECTIVE;
+        if (camera3D.projection == CAMERA_PERSPECTIVE)
+        {
+            camera3D.position = VEC3(0, 2, 400);
+            camera3D.target = VEC3(0, 0, 0);
+            camera3D.up = VEC3(0, 1, 0);
+            camera3D.fovy = 60.0f;
+        }
+        else
+        {
+            camera3D.position = VEC3(0, 2, 400);
+        }
+    }
 }
 
 static void GameUpdate(void)
@@ -166,7 +198,18 @@ static void GameUpdate(void)
     {
         isMapChanged = false;
     }
-    UpdateCamera(&camera3D, CAMERA_THIRD_PERSON);
+    UpdateCameraPro(
+        &camera3D,
+        VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * CAMERA_MOVEMENT_SPEED - // Move forward-backward
+                 (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * CAMERA_MOVEMENT_SPEED,
+             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * CAMERA_MOVEMENT_SPEED - // Move right-left
+                 (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * CAMERA_MOVEMENT_SPEED,
+             IsKeyDown(KEY_K) * CAMERA_MOVEMENT_SPEED - IsKeyDown(KEY_J) * CAMERA_MOVEMENT_SPEED), // Move up-down
+        VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY,                                                // Rotation: yaw
+             GetMouseDelta().y * MOUSE_SENSITIVITY,                                                // Rotation: pitch
+             0.0f                                                                                  // Rotation: roll
+             ),
+        GetMouseWheelMove() * ZOOM_SCALING); // Move to target (zoom)
 
     if (IsKeyDown(KEY_EQUAL))
     {
@@ -219,6 +262,7 @@ static void GameDraw(void)
         BeginMode3D(camera3D);
         {
             DrawBuildingModels(buildings);
+            DrawGrid(1000, 10.0f);
         }
         EndMode3D();
     }
