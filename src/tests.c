@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "tests.h"
 
@@ -161,8 +162,9 @@ void testUnmaskBits(void)
         i32 right = GetRandomValue(INT32_MIN, INT32_MAX);
         u64 input = genUniqueU64(left, right);
         UnMaskedBitsI32 res = unMaskI32(input);
-        assert(res.left == left);
-        assert(res.right == right);
+
+        ASSERT_EQ("%d", res.left, left);
+        ASSERT_EQ("%d", res.right, right);
     }
 }
 

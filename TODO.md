@@ -1,0 +1,4 @@
+- [ ] Figure out how many chunks do i need to render.
+    - [ ] Get the current camera position
+    - [ ] Calculate the furthest distance from current camera
+    - [ ] Get all cell values until that distance

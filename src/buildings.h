@@ -40,5 +40,6 @@ BuildingArray generateBuildings(Arena *arena, u32 width, u32 height, i32 offsetX
 void DrawBuidlingsTopDownView(BuildingArray arr);
 
 void DrawBuildingModels(BuildingArray arr);
+void DrawBuildingModel(Building building);
 
 #endif // !BUILDINGS_H

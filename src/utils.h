@@ -56,8 +56,8 @@ typedef struct
 static inline UnMaskedBitsI32 unMaskI32(u64 data)
 {
     return (UnMaskedBitsI32){
-        (i32)(data),
-        (i32)(data >> 32),
+        .right = (i32)(data),
+        .left = (i32)(data >> 32) & 0xFFFFFFFF,
     };
 }
 

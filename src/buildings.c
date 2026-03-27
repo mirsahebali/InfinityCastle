@@ -110,7 +110,15 @@ void DrawBuildingModels(BuildingArray arr)
     for (size_t i = 0; i < length; i++)
     {
         Building building = ARRAY_GET(arr, Building, i);
-        DrawCube(VEC3(building.rect.x, 2.0f, building.rect.y), building.rect.width, building.rect.height, 20.0f,
-                 map_building_type_to_color(building.bType));
+        DrawBuildingModel(building);
     }
+}
+
+void DrawBuildingModel(Building building)
+{
+
+    DrawCube(VEC3(building.rect.x, 2.0f, building.rect.y), building.rect.width, 20.0f, building.rect.height,
+             map_building_type_to_color(building.bType));
+    DrawCubeWires(VEC3(building.rect.x, 2.0f, building.rect.y), building.rect.width, 20.0f, building.rect.height,
+                  BLACK);
 }
