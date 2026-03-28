@@ -69,6 +69,8 @@ raylib
 
 # Build folder
 [Bb]uild
+# Release folder
+release
 
 tests-out
 

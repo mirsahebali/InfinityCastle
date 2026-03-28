@@ -19,8 +19,9 @@ run: build
   cd src && ../build/InfinityCastle/InfinityCastle
 
 release:
-  cmake -S . -B build
-  cmake --build build
+  mkdir -p release
+  cmake -S . -B release
+  cmake --build release
 
 clean:
   rm -rf build tests-out

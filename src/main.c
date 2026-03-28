@@ -47,8 +47,9 @@
 #endif
 static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
-static const float VIEW_DISTANCE = 1500.0f;
-static const float CAMERA_MOVEMENT_SPEED = 200.0f;
+static const float FAR_PLANE = 2500.0f;
+static const float NEAR_PLANE = 1.0f;
+static const float CAMERA_MOVEMENT_SPEED = 400.0f;
 static const float MOUSE_SENSITIVITY = 0.09f;
 static const float ZOOM_SCALING = 2.0f;
 
@@ -94,6 +95,7 @@ int main(void)
     return 0;
 }
 
+// Localized shared variables
 bool isMapChanged = false;
 float mapScale = 0.0f;
 Arena arena = {0};
@@ -101,10 +103,10 @@ BuildingArray buildings = NULL;
 const float CAMERA_2D_MOVEMENT_SPEED = 100.0f;
 i32 buildingXDirCount = 10;
 i32 buildingYDirCount = 10;
-
 i32 chunkCount = 0;
-
 u32 maxChunks = 0;
+float offsetChange = 1.0f;
+float aspect = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
 
 static void GameInit(void)
 {
@@ -114,7 +116,7 @@ static void GameInit(void)
     InitAudioDevice(); // Initialize audio device
 
     mouseSensitivity = 1.0f;
-    rlSetClipPlanes(1.0f, VIEW_DISTANCE);
+    rlSetClipPlanes(NEAR_PLANE, FAR_PLANE);
 
     camera3D.position = VEC3(0, 2, 400);
     camera3D.target = VEC3(0, 0, 0);
@@ -139,6 +141,7 @@ static void GameInit(void)
 // Update and draw game frame
 static void GameLoop(void)
 {
+    delta = GetFrameTime();
     GameControls();
     GameUpdate();
     GameDraw();
@@ -175,30 +178,6 @@ static void GameControls(void)
     {
         camera3D.projection = camera3D.projection == CAMERA_PERSPECTIVE ? CAMERA_ORTHOGRAPHIC : CAMERA_PERSPECTIVE;
     }
-}
-
-static void GameUpdate(void)
-{
-
-    delta = GetFrameTime();
-    float offsetChange = 1.0f;
-    if (isMapChanged)
-    {
-        isMapChanged = false;
-    }
-    UpdateCameraPro(
-        &camera3D,
-        VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move forward-backward
-                 (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * (CAMERA_MOVEMENT_SPEED * delta),
-             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move right-left
-                 (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * (CAMERA_MOVEMENT_SPEED * delta),
-             IsKeyDown(KEY_K) * (CAMERA_MOVEMENT_SPEED * delta) -
-                 IsKeyDown(KEY_J) * (CAMERA_MOVEMENT_SPEED * delta)), // Move up-down
-        VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY,                   // Rotation: yaw
-             GetMouseDelta().y * MOUSE_SENSITIVITY,                   // Rotation: pitch
-             0.0f                                                     // Rotation: roll
-             ),
-        GetMouseWheelMove() * ZOOM_SCALING); // Move to target (zoom)
 
     if (IsKeyDown(KEY_EQUAL))
     {
@@ -236,6 +215,29 @@ static void GameUpdate(void)
         isMapChanged = true;
         mapOffset.y += offsetChange * delta;
     }
+
+    UpdateCameraPro(
+        &camera3D,
+        VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move forward-backward
+                 (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * (CAMERA_MOVEMENT_SPEED * delta),
+             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move right-left
+                 (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * (CAMERA_MOVEMENT_SPEED * delta),
+             IsKeyDown(KEY_K) * (CAMERA_MOVEMENT_SPEED * delta) -
+                 IsKeyDown(KEY_J) * (CAMERA_MOVEMENT_SPEED * delta)), // Move up-down
+        VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY,                   // Rotation: yaw
+             GetMouseDelta().y * MOUSE_SENSITIVITY,                   // Rotation: pitch
+             0.0f                                                     // Rotation: roll
+             ),
+        GetMouseWheelMove() * ZOOM_SCALING); // Move to target (zoom)
+}
+
+static void GameUpdate(void)
+{
+
+    if (isMapChanged)
+    {
+        isMapChanged = false;
+    }
 }
 
 static void GameDraw(void)
@@ -250,14 +252,13 @@ static void GameDraw(void)
         // EndMode2D();
         BeginMode3D(camera3D);
         {
-
             chunkCount = 0;
-            for (i16 chunkCountX = (camera3D.position.x - VIEW_DISTANCE) / chunkSize;
-                 chunkCountX < ((camera3D.position.x + VIEW_DISTANCE) / chunkSize); chunkCountX++)
+            for (i16 chunkCountX = ((camera3D.position.x - FAR_PLANE) / chunkSize);
+                 chunkCountX < ((camera3D.position.x + FAR_PLANE) / chunkSize); chunkCountX++)
             {
 
-                for (i16 chunkCountZ = (camera3D.position.z - VIEW_DISTANCE) / chunkSize;
-                     chunkCountZ < (camera3D.position.z + VIEW_DISTANCE) / chunkSize; chunkCountZ++)
+                for (i16 chunkCountZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
+                     chunkCountZ < ((camera3D.position.z + FAR_PLANE) / chunkSize); chunkCountZ++)
                 {
                     chunkCount++;
                     Rectangle buildingRect = genRandomBuilding2D(VEC2(chunkCountX, chunkCountZ), chunkSize, chunkSize);
@@ -270,13 +271,12 @@ static void GameDraw(void)
                 }
             }
 
+            DrawRay(GetMouseRay(GetMousePosition(), camera3D), RED);
             DrawGrid(1000, 100);
         }
-
         EndMode3D();
     }
 #ifndef NDEBUG
-
     const int fontSize = 25;
     const int gapY = 5;
     const char *cameraPositionStr = TextFormat("Position: (x = %.2f, y = %.2f, z = %.2f)", camera3D.position.x,
