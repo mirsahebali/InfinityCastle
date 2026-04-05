@@ -297,7 +297,6 @@ static void GameDraw(void)
         }
         DrawGrid(1000, 100);
         EndMode3D();
-        EndMode3D();
     }
 #ifndef NDEBUG
 
