@@ -13,8 +13,11 @@
  *  Copyright (c) 2026 Mir Saheb Ali (@mirsahebali)
  ********************************************************************************************/
 
+#include "culling.h"
+#include "planes.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "rays.h"
 #include "rlgl.h"
 
 #include "external/stb_perlin.h"
@@ -24,6 +27,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "global_state.h"
@@ -49,18 +53,23 @@ static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
 static const float FAR_PLANE = 2500.0f;
 static const float NEAR_PLANE = 1.0f;
-static const float CAMERA_MOVEMENT_SPEED = 400.0f;
-static const float MOUSE_SENSITIVITY = 0.09f;
-static const float ZOOM_SCALING = 2.0f;
+static const float CAMERA_MOVEMENT_SPEED = 400.0f; static const float MOUSE_SENSITIVITY = 0.09f;
+static const float ZOOM_SCALING = 50.0f;
 
+// Window initialization and global state setup
 static void GameInit(void);
+
 static void GameLoop(void);
+// Input handling is done here
 static void GameControls(void);
+// Data update on each frame
 static void GameUpdate(void);
+// rendering logic
 static void GameDraw(void);
+// Cleanup
 static void GameEnd(void);
 
-// INFO: global state from 'global_state.h'
+// INFO: global mutable shared state from 'global_state.h'
 float mouseSensitivity = 1.0f;
 Camera3D camera3D = {0};
 Camera2D camera2D = {0};
@@ -95,10 +104,19 @@ int main(void)
     return 0;
 }
 
+#define MAX_RAYS 20
+#define MAX_RAY_DISTANCE 1000
+#define MAX_CHUNKS (MAX_CAMERA_RAYS * MAX_RAY_INTERSECTIONS)
+
 // Localized shared variables
+
+// Map mutation tracker
 bool isMapChanged = false;
+// Zoom scale of the 2D map
 float mapScale = 0.0f;
+// Global Arena
 Arena arena = {0};
+// Array of buildings to be rendered(arena allocated)
 BuildingArray buildings = NULL;
 const float CAMERA_2D_MOVEMENT_SPEED = 100.0f;
 i32 buildingXDirCount = 10;
@@ -107,11 +125,15 @@ i32 chunkCount = 0;
 u32 maxChunks = 0;
 float offsetChange = 1.0f;
 float aspect = SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+ChunkValue2D cells[MAX_CHUNKS] = {0};
+Frustum cameraFrustum = {0};
 
 static void GameInit(void)
 {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     // Initialization:
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Infinity Castle");
+    rlEnableBackfaceCulling();
 
     InitAudioDevice(); // Initialize audio device
 
@@ -136,6 +158,8 @@ static void GameInit(void)
     mapScale = 0.5f;
 
     arena = arena_init(20 << 20); // 20 MB
+    cameraFrustum = createFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+
 }
 
 // Update and draw game frame
@@ -187,7 +211,6 @@ static void GameControls(void)
 
     if (IsKeyDown(KEY_MINUS))
     {
-
         mapScale -= 0.01f;
         isMapChanged = true;
     }
@@ -230,14 +253,14 @@ static void GameControls(void)
              ),
         GetMouseWheelMove() * ZOOM_SCALING); // Move to target (zoom)
 }
-
 static void GameUpdate(void)
 {
-
     if (isMapChanged)
     {
         isMapChanged = false;
     }
+
+    cameraFrustum = createFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
 }
 
 static void GameDraw(void)
@@ -245,11 +268,6 @@ static void GameDraw(void)
     BeginDrawing();
     {
         ClearBackground(RAYWHITE);
-        // BeginMode2D(camera2D);
-        // {
-        //     DrawBuidlingsTopDownView(buildings);
-        // }
-        // EndMode2D();
         BeginMode3D(camera3D);
         {
             chunkCount = 0;
@@ -259,48 +277,61 @@ static void GameDraw(void)
 
                 for (i16 chunkCountZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
                      chunkCountZ < ((camera3D.position.z + FAR_PLANE) / chunkSize); chunkCountZ++)
+
                 {
-                    chunkCount++;
-                    Rectangle buildingRect = genRandomBuilding2D(VEC2(chunkCountX, chunkCountZ), chunkSize, chunkSize);
-                    Building building = {
-                        .id = genUniqueU32(chunkCountX, chunkCountZ),
-                        .rect = buildingRect,
-                        .bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1),
-                    };
-                    DrawBuildingModel(building);
+                    Building building = {0};
+                    building.id = genUniqueU32(chunkCountX, chunkCountZ);
+                    building.box = (BoundingBox){0};
+
+                    SetRandomSeed(building.id);
+                    // Rectangle rect = genRandomBuilding2D(VEC2(x, y), spacing, spacing);
+                    BoundingBox box =
+                        genRandomBoundingBox2D((CellValue2D){chunkCountX, chunkCountZ}, chunkSize, chunkSize);
+                    building.box = box;
+                    building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
+
+                    if(IsBoxInsideFrustum(&cameraFrustum, building.box))
+                    {
+                        chunkCount++;
+                        DrawFilledBoundingBox(building.box, map_building_type_to_color(building.bType));
+                        DrawBoundingBoxWires(building.box, BLACK);
+                    }
                 }
             }
-
-            DrawRay(GetMouseRay(GetMousePosition(), camera3D), RED);
-            DrawGrid(1000, 100);
         }
+        DrawGrid(1000, 100);
+        EndMode3D();
         EndMode3D();
     }
 #ifndef NDEBUG
+
+#define cameraPositionStr                                                                                              \
+    TextFormat("Position: (x = %.2f, y = %.2f, z = %.2f)", camera3D.position.x, camera3D.position.y,                   \
+               camera3D.position.z)
+#define cameraUpStr TextFormat("Up: (x = %.2f, y = %.2f, z = %.2f)", camera3D.up.x, camera3D.up.y, camera3D.up.z)
+#define cameraTargetStr                                                                                                \
+    TextFormat("Target: (x = %.2f, y = %.2f, z = %.2f)", camera3D.target.x, camera3D.target.y, camera3D.target.z)
+#define fovAngleStr TextFormat("Angle: %.2f", camera3D.fovy)
+#define chunkStr TextFormat("Chunk Count: %d", chunkCount)
+
     const int fontSize = 25;
     const int gapY = 5;
-    const char *cameraPositionStr = TextFormat("Position: (x = %.2f, y = %.2f, z = %.2f)", camera3D.position.x,
-                                               camera3D.position.y, camera3D.position.z);
-    const char *cameraLookingAtStr = TextFormat("Looking At: (x = %.2f, y = %.2f, z = %.2f)", camera3D.target.x,
-                                                camera3D.target.y, camera3D.target.z);
-    const char *cameraUpStr =
-        TextFormat("Up: (x = %.2f, y = %.2f, z = %.2f)", camera3D.up.x, camera3D.up.y, camera3D.up.z);
-    const char *fovAngleStr = TextFormat("Angle: %.2f", camera3D.fovy);
-    const char *chunkCountStr = TextFormat("Chunk Count: %d", chunkCount);
+    const int cameraPositionStrWidth = MeasureText(cameraPositionStr, fontSize);
+    const int cameraTargetStrWidth = MeasureText(cameraTargetStr, fontSize);
+    const int rectWidth = cameraPositionStrWidth > cameraTargetStrWidth ? cameraPositionStrWidth : cameraTargetStrWidth;
+    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6, ColorAlpha(BLUE, 0.4f));
+    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6, ColorAlpha(WHITE, 0.4f));
+    DrawRectangleLinesEx(RECT(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6), 3.0f, BLUE);
 
-    const int rectWidth = MeasureText(cameraLookingAtStr, fontSize);
-    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6, ColorAlpha(BLUE, 0.5f));
-    DrawRectangleLinesEx(RECT(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6), 3.0f, ColorAlpha(BLUE, 0.5f));
-
-    DrawText(cameraPositionStr, GetScreenWidth() - MeasureText(cameraPositionStr, fontSize), 0 + gapY, fontSize, BLACK);
-    DrawText(cameraLookingAtStr, GetScreenWidth() - MeasureText(cameraLookingAtStr, fontSize), fontSize + (2 * gapY),
+    DrawText(cameraPositionStr, GetScreenWidth() - MeasureText(cameraPositionStr, fontSize), gapY, fontSize, BLACK);
+    DrawText(cameraTargetStr, GetScreenWidth() - MeasureText(cameraTargetStr, fontSize), fontSize + (2 * gapY),
              fontSize, BLACK);
     DrawText(cameraUpStr, GetScreenWidth() - MeasureText(cameraUpStr, fontSize), (fontSize * 2) + (3 * gapY), fontSize,
              BLACK);
     DrawText(fovAngleStr, GetScreenWidth() - MeasureText(fovAngleStr, fontSize), (fontSize * 3) + (4 * gapY), fontSize,
              BLACK);
-    DrawText(chunkCountStr, GetScreenWidth() - MeasureText(chunkCountStr, fontSize), (fontSize * 4) + (5 * gapY),
-             fontSize, BLACK);
+    DrawText(chunkStr, GetScreenWidth() - MeasureText(chunkStr, fontSize), (fontSize * 4) + (5 * gapY), fontSize,
+             BLACK);
 
     DrawFPS(10, 10);
 

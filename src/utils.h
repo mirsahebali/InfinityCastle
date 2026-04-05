@@ -2,8 +2,10 @@
 #define UTILS_H
 
 #include "mtypes.h"
+#include <raylib.h>
 
 #define VEC2(_x, _y) ((Vector2){.x = (f32)(_x), .y = (f32)(_y)})
+#define VEC2_STR(v) (TextFormat("Vector2( x = %f, y = %f, z = %f )", v.x, v.y, v.z))
 #define VEC3(_x, _y, _z) ((Vector3){.x = (f32)(_x), .y = (f32)(_y), .z = (f32)(_z)})
 #define VEC4(_x, _y, _z, _w) ((Vector4){.x = (f32)(_x), .y = (f32)(_y), .z = (f32)(_z), .w = (f32)(_w)})
 
@@ -39,6 +41,13 @@
     {                                                                                                                  \
         if (left == right)                                                                                             \
             ASSERT_EVAL(specifier, left, right)                                                                        \
+    } while (0)
+
+#define NOT_IMPLEMENTED                                                                                                \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        printf("%s:%s:%d not implemented\n", __FILE__, __FUNCTION__, __LINE__);                                        \
+        exit(1);                                                                                                       \
     } while (0)
 
 typedef struct
@@ -78,5 +87,14 @@ static inline u64 genUniqueU64(i32 left, i32 right)
 {
     return ((u64)(u32)left << 32) | (u32)right;
 }
+
+typedef enum
+{
+    DIRECTION_XZ,
+    DIRECTION_XY,
+    DIRECTION_YZ,
+} Vector3Directions3D;
+
+Vector2 Vec3ToVec2(Vector3, Vector3Directions3D);
 
 #endif // !UTILS_H

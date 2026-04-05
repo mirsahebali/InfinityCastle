@@ -5,6 +5,7 @@
 
 extern float mouseSensitivity;
 extern Camera3D camera3D;
+extern Camera3D camera3DSplitRight;
 extern Camera2D camera2D;
 extern float mapWidth;
 extern float mapHeight;

@@ -14,4 +14,21 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 
+typedef struct
+{
+    i16 x;
+    i16 y;
+} ChunkValue2D;
+
+typedef struct
+{
+    i16 x;
+    i16 y;
+    i16 z;
+} ChunkValue3D;
+
+typedef ChunkValue2D CellValue2D;
+
+typedef ChunkValue3D CellValue3D;
+
 #endif // !MTYPES_H

@@ -12,9 +12,13 @@
 
 #include "path_ways.h"
 #include "raylib.h"
+#include "rays.h"
 #include "utils.h"
 
-int tests = 0;
+static int testCount = 0;
+
+static inline void fnRun(const char *message, void (*func)(void));
+static void endTests(void);
 
 int cmp_uint64(const void *a, const void *b)
 {
@@ -168,8 +172,15 @@ void testUnmaskBits(void)
     }
 }
 
-static inline void fnRun(const char *message, void (*func)(void));
-static void endTests(void);
+void testRayPlaneIntersection(void)
+{
+    RayIntersections intersections = GetLineCellIntersections(VEC2(89, 22), VEC2(0, 5), 1, 1, 1);
+
+    for (i32 i = 0; i < 10; i++)
+    {
+        printf("( x = %d, y = %d )\n", intersections.cells[i].x, intersections.cells[i].y);
+    }
+}
 
 void runTests(void)
 {
@@ -178,12 +189,13 @@ void runTests(void)
     fnRun("test unique i64 id generation", testID64Generation);
     fnRun("test unique i32 id generation", testID32Generation);
     fnRun("test unique unmasking", testUnmaskBits);
+    fnRun("test ray plane intersection", testRayPlaneIntersection);
     endTests();
 }
 
 static inline void fnRun(const char *message, void (*func)(void))
 {
-    tests++;
+    testCount++;
     printf("------\n");
     printf("Test Started: %s\n", message);
     func();
@@ -193,5 +205,6 @@ static inline void fnRun(const char *message, void (*func)(void))
 
 static void endTests(void)
 {
+    printf("Ran %d tests\n", testCount);
     printf("Tests Complete! :)\n");
 }
