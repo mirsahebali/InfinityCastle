@@ -53,7 +53,8 @@ static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
 static const float FAR_PLANE = 2500.0f;
 static const float NEAR_PLANE = 1.0f;
-static const float CAMERA_MOVEMENT_SPEED = 400.0f; static const float MOUSE_SENSITIVITY = 0.09f;
+static const float CAMERA_MOVEMENT_SPEED = 400.0f;
+static const float MOUSE_SENSITIVITY = 0.09f;
 static const float ZOOM_SCALING = 50.0f;
 
 // Window initialization and global state setup
@@ -242,11 +243,11 @@ static void GameControls(void)
     UpdateCameraPro(
         &camera3D,
         VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move forward-backward
-                 (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * (CAMERA_MOVEMENT_SPEED * delta),
+             (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * (CAMERA_MOVEMENT_SPEED * delta),
              (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move right-left
-                 (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * (CAMERA_MOVEMENT_SPEED * delta),
-             IsKeyDown(KEY_K) * (CAMERA_MOVEMENT_SPEED * delta) -
-                 IsKeyDown(KEY_J) * (CAMERA_MOVEMENT_SPEED * delta)), // Move up-down
+             (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * (CAMERA_MOVEMENT_SPEED * delta),
+             IsKeyDown(KEY_K) * (CAMERA_MOVEMENT_SPEED * delta) - // Move up-down
+             IsKeyDown(KEY_J) * (CAMERA_MOVEMENT_SPEED * delta)), 
         VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY,                   // Rotation: yaw
              GetMouseDelta().y * MOUSE_SENSITIVITY,                   // Rotation: pitch
              0.0f                                                     // Rotation: roll
@@ -271,23 +272,18 @@ static void GameDraw(void)
         BeginMode3D(camera3D);
         {
             chunkCount = 0;
-            for (i16 chunkCountX = ((camera3D.position.x - FAR_PLANE) / chunkSize);
-                 chunkCountX < ((camera3D.position.x + FAR_PLANE) / chunkSize); chunkCountX++)
+            i16 minX = ((camera3D.position.x - FAR_PLANE) / chunkSize);
+            i16 maxX = ((camera3D.position.x + FAR_PLANE) / chunkSize);
+
+            i16 minZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
+            i16 maxZ = ((camera3D.position.z + FAR_PLANE) / chunkSize);
+            for (i16 chunkCountX = minX; chunkCountX < maxX; chunkCountX++)
             {
-
-                for (i16 chunkCountZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
-                     chunkCountZ < ((camera3D.position.z + FAR_PLANE) / chunkSize); chunkCountZ++)
-
+                for (i16 chunkCountZ = minZ; chunkCountZ < maxZ; chunkCountZ++)
                 {
                     Building building = {0};
                     building.id = genUniqueU32(chunkCountX, chunkCountZ);
-                    building.box = (BoundingBox){0};
-
-                    SetRandomSeed(building.id);
-                    // Rectangle rect = genRandomBuilding2D(VEC2(x, y), spacing, spacing);
-                    BoundingBox box =
-                        genRandomBoundingBox2D((CellValue2D){chunkCountX, chunkCountZ}, chunkSize, chunkSize);
-                    building.box = box;
+                    building.box = genRandomBoundingBox2D((CellValue2D){chunkCountX, chunkCountZ}, chunkSize, chunkSize);
                     building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
 
                     if(IsBoxInsideFrustum(&cameraFrustum, building.box))
