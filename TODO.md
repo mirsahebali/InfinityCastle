@@ -1,4 +1,8 @@
-- [ ] Figure out how many chunks do i need to render.
-    - [ ] Get the current camera position
-    - [ ] Calculate the furthest distance from current camera
-    - [ ] Get all cell values until that distance
+- [x] Frustum Culling Optimization
+- [ ] Increase Spacing between buildings
+- [ ] Make sepratate building "regions"
+    - [ ] Regions will contains stuff like:
+        - Spiral Stairway
+        - Connected Stairs
+        - Big gap thingy between regions(I can't remember what it's called)
+        - Doors and windows(atleast info addition to them)
