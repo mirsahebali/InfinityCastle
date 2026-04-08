@@ -51,11 +51,11 @@
 #endif
 static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
-static const float FAR_PLANE = 2500.0f;
+static const float FAR_PLANE = 1000.0f;
 static const float NEAR_PLANE = 1.0f;
 static const float CAMERA_MOVEMENT_SPEED = 400.0f;
 static const float MOUSE_SENSITIVITY = 0.09f;
-static const float ZOOM_SCALING = 50.0f;
+static const float ZOOM_SCALING = 100.0f;
 
 // Window initialization and global state setup
 static void GameInit(void);
@@ -78,7 +78,7 @@ float mapWidth = 0.0f;
 float mapHeight = 0.0f;
 Vector2 mapOffset = {0};
 int rngSeed = 0;
-int chunkSize = 50;
+int chunkSize = 100;
 float delta = 0.0f;
 
 int main(void)
@@ -131,20 +131,22 @@ Frustum cameraFrustum = {0};
 
 static void GameInit(void)
 {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_FULLSCREEN_MODE);
     // Initialization:
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Infinity Castle");
+    rlEnableDepthTest();
     rlEnableBackfaceCulling();
 
     InitAudioDevice(); // Initialize audio device
 
     mouseSensitivity = 1.0f;
+
     rlSetClipPlanes(NEAR_PLANE, FAR_PLANE);
 
-    camera3D.position = VEC3(0, 2, 400);
-    camera3D.target = VEC3(0, 0, 0);
+    camera3D.position = VEC3(0, 200, 400);
+    camera3D.target = VEC3(0, 2, 20);
     camera3D.up = VEC3(0, 1, 0);
-    camera3D.fovy = 60.0f;
+    camera3D.fovy = 45.0f;
     camera3D.projection = CAMERA_PERSPECTIVE;
 
     camera2D.target = VEC2(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0);
@@ -275,22 +277,28 @@ static void GameDraw(void)
             i16 minX = ((camera3D.position.x - FAR_PLANE) / chunkSize);
             i16 maxX = ((camera3D.position.x + FAR_PLANE) / chunkSize);
 
+            i16 minY = ((camera3D.position.y - FAR_PLANE) / chunkSize);
+            i16 maxY = ((camera3D.position.y + FAR_PLANE) / chunkSize);
+
             i16 minZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
             i16 maxZ = ((camera3D.position.z + FAR_PLANE) / chunkSize);
             for (i16 chunkCountX = minX; chunkCountX < maxX; chunkCountX++)
             {
-                for (i16 chunkCountZ = minZ; chunkCountZ < maxZ; chunkCountZ++)
-                {
-                    Building building = {0};
-                    building.id = genUniqueU32(chunkCountX, chunkCountZ);
-                    building.box = genRandomBoundingBox2D((CellValue2D){chunkCountX, chunkCountZ}, chunkSize, chunkSize);
-                    building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
+              for (i16 chunkCountY = minY; chunkCountY < maxY; chunkCountY++)
+              {
+                  for (i16 chunkCountZ = minZ; chunkCountZ < maxZ; chunkCountZ++)
+                  {
+                      Building building = {0};
+                      building.id = BitPackU32(chunkCountX, chunkCountZ);
+                      building.box = GenRandomBoundingBox3D((CellValue3D){chunkCountX, chunkCountY, chunkCountZ}, chunkSize, chunkSize, chunkSize);
+                      building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
 
-                    if(IsBoxInsideFrustum(&cameraFrustum, building.box))
-                    {
-                        chunkCount++;
-                        DrawFilledBoundingBox(building.box, map_building_type_to_color(building.bType));
-                        DrawBoundingBoxWires(building.box, BLACK);
+                      if(IsBoxInsideFrustum(&cameraFrustum, building.box))
+                      {
+                          chunkCount++;
+                          DrawFilledBoundingBox(building.box, map_building_type_to_color(building.bType));
+                          DrawBoundingBoxWires(building.box, BLACK);
+                      }
                     }
                 }
             }
@@ -328,7 +336,7 @@ static void GameDraw(void)
     DrawText(chunkStr, GetScreenWidth() - MeasureText(chunkStr, fontSize), (fontSize * 4) + (5 * gapY), fontSize,
              BLACK);
 
-    DrawFPS(10, 10);
+    DrawFPSFull(VEC2(8, 8), 20, 5, 5, BLACK);
 
 #endif /* ifndef NDEBUG */
     EndDrawing();

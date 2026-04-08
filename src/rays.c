@@ -11,10 +11,10 @@ RayIntersections GetRayCellIntersections(Ray r, Vector3Directions3D vecDir, i32 
     Vector2 startVec = Vec3ToVec2(r.position, vecDir);
     Vector2 endVec = Vector2Scale(Vec3ToVec2(r.direction, vecDir), scale);
 
-    return DetectCollidedCells(startVec, endVec, stepSize, xSpacing, ySpacing);
+    return DetectRayCollidedCells(startVec, endVec, stepSize, xSpacing, ySpacing);
 }
 
-RayIntersections DetectCollidedCells(Vector2 start, Vector2 end, i32 stepSize, i32 xSpacing, i32 ySpacing)
+RayIntersections DetectRayCollidedCells(Vector2 start, Vector2 end, i32 stepSize, i32 xSpacing, i32 ySpacing)
 {
     RayIntersections intersections = {0};
     i32 startX = start.x;

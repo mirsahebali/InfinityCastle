@@ -91,7 +91,7 @@ void testID64Generation(void)
         for (int x = -width; x < width; x++)
 
         {
-            uint64_t uID = genUniqueU64(x, y);
+            uint64_t uID = BitPackU64(x, y);
             array = ARRAY_PUSH(array, uint64_t, &uID);
         }
     }
@@ -125,7 +125,7 @@ void testID32Generation(void)
         for (int x = -width; x < width; x++)
 
         {
-            uint64_t uID = genUniqueU32(x, y);
+            uint64_t uID = BitPackU32(x, y);
             array = ARRAY_PUSH(array, u32, &uID);
         }
     }
@@ -154,8 +154,8 @@ void testUnmaskBits(void)
     {
         i16 left = GetRandomValue(INT16_MIN, INT16_MAX);
         i16 right = GetRandomValue(INT16_MIN, INT16_MAX);
-        u32 input = genUniqueU32(left, right);
-        UnMaskedBitsI16 res = unMaskI16(input);
+        u32 input = BitPackU32(left, right);
+        UnMaskedBitsI16 res = UnPackI16(input);
         assert(res.left == left);
         assert(res.right == right);
     }
@@ -164,8 +164,8 @@ void testUnmaskBits(void)
     {
         i32 left = GetRandomValue(INT32_MIN, INT32_MAX);
         i32 right = GetRandomValue(INT32_MIN, INT32_MAX);
-        u64 input = genUniqueU64(left, right);
-        UnMaskedBitsI32 res = unMaskI32(input);
+        u64 input = BitPackU64(left, right);
+        UnPackedBitsI32 res = UnPackI32(input);
 
         ASSERT_EQ("%d", res.left, left);
         ASSERT_EQ("%d", res.right, right);

@@ -40,13 +40,17 @@ Color map_building_type_to_color(BuildingType t)
     default:
         return BLANK;
     }
+  
 }
 
 static const Vector2 OFFSET_SCALING_FORWARD = {0.3f, 0.3f};
-static const Vector2 OFFSET_SCALING_BACKWARD = {0.2f, 0.3f};
+static const Vector2 OFFSET_SCALING_BACKWARD = {0.2f, 0.2f};
+
+static const Vector3 OFFSET_SCALING_FORWARD_3D = {0.3f, 0.3f, 0.3f};
+static const Vector3 OFFSET_SCALING_BACKWARD_3D = {0.3f, 0.3f, 0.3f};
 Rectangle genRandomBuilding2D(Vector2 cell, i32 cellWidth, i32 cellHeight)
 {
-    SetRandomSeed(genUniqueU32((i16)cell.x, (i16)cell.y));
+    SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));
     i32 cellInitX = cell.x * cellWidth;
     i32 cellInitY = cell.y * cellHeight;
 
@@ -70,16 +74,16 @@ Rectangle genRandomBuilding2D(Vector2 cell, i32 cellWidth, i32 cellHeight)
 }
 
 const f32 BOX_Y_SIZE = 40.0f;
-BoundingBox genRandomBoundingBox2D(CellValue2D cell, i32 cellWidth, i32 cellHeight)
+BoundingBox GenRandomBoundingBox2D(CellValue2D cell, i32 cellWidth, i32 cellHeight)
 {
     BoundingBox out = {0};
-    SetRandomSeed(genUniqueU32((i16)cell.x, (i16)cell.y));
+    SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));
     Vector3 minPos = {0};
     minPos.x = cell.x * cellWidth;
     minPos.y = 0.0f;
     minPos.z = cell.y * cellHeight;
 
-    Vector3 maxPos = Vector3Add(minPos, VEC3(cellWidth, BOX_Y_SIZE, cellHeight));
+    Vector3 maxPos = Vector3Add(minPos, VEC3(cellWidth * (1- OFFSET_SCALING_BACKWARD.x), BOX_Y_SIZE, cellHeight * (1- OFFSET_SCALING_BACKWARD.y)));
     out.min.x = GetRandomValue(minPos.x, minPos.x + (cellWidth * OFFSET_SCALING_FORWARD.x));
     out.min.y = minPos.y;
     out.min.z = GetRandomValue(minPos.z, minPos.z + (cellHeight * OFFSET_SCALING_FORWARD.y));
@@ -91,11 +95,28 @@ BoundingBox genRandomBoundingBox2D(CellValue2D cell, i32 cellWidth, i32 cellHeig
     return out;
 }
 
-BoundingBox genRandomBoundingBox3D(CellValue3D cell, i32 cellWidth, i32 cellHeight, i32 cellLength)
+BoundingBox GenRandomBoundingBox3D(CellValue3D cell, i32 cellWidth, i32 cellLength, i32 cellHeight)
 {
-    BoundingBox box = {0};
-    NOT_IMPLEMENTED;
-    return box;
+    BoundingBox out = {0};
+    SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));
+    Vector3 minPos = {0};
+    minPos.x = cell.x * cellWidth;
+    minPos.y = cell.y * cellHeight;
+    minPos.z = cell.z * cellLength;
+
+    Vector3 maxPos = Vector3Add(minPos,
+                                VEC3(cellWidth  *  (1 - OFFSET_SCALING_BACKWARD_3D.x),
+                                     cellHeight *  (1 - OFFSET_SCALING_BACKWARD_3D.y),
+                                     cellLength *  (1 - OFFSET_SCALING_BACKWARD_3D.z)));
+    out.min.x = GetRandomValue(minPos.x, minPos.x + (cellWidth * OFFSET_SCALING_FORWARD_3D.x));
+    out.min.y = GetRandomValue(minPos.y, minPos.y + (cellHeight * OFFSET_SCALING_FORWARD_3D.y));
+    out.min.z = GetRandomValue(minPos.z, minPos.z + (cellLength * OFFSET_SCALING_FORWARD_3D.z));
+
+    out.max.x = GetRandomValue(maxPos.x, maxPos.x - (cellWidth * OFFSET_SCALING_BACKWARD_3D.x));
+    out.max.y = GetRandomValue(maxPos.y, maxPos.y - (cellHeight * OFFSET_SCALING_BACKWARD_3D.y));
+    out.max.z = GetRandomValue(maxPos.z, maxPos.z - (cellLength * OFFSET_SCALING_BACKWARD_3D.z));
+
+    return out;
 }
 
 BuildingArray generateBuildings(Arena *arena, u32 width, u32 height, i32 offsetX, i32 offsetY, i32 spacing)
@@ -108,12 +129,12 @@ BuildingArray generateBuildings(Arena *arena, u32 width, u32 height, i32 offsetX
         {
 
             Building data = {0};
-            data.id = genUniqueU32(x, y);
+            data.id = BitPackU32(x, y);
             data.box = (BoundingBox){0};
 
             SetRandomSeed(data.id);
             // Rectangle rect = genRandomBuilding2D(VEC2(x, y), spacing, spacing);
-            BoundingBox box = genRandomBoundingBox2D((CellValue2D){x, y}, spacing, spacing);
+            BoundingBox box = GenRandomBoundingBox2D((CellValue2D){x, y}, spacing, spacing);
             data.box = box;
             data.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_7);
 
@@ -139,15 +160,6 @@ void DrawBuildingsTopDownView(BuildingArray arr)
         DrawRectangle(building.box.min.x, building.box.min.z, building.box.max.x - building.box.min.x,
                       building.box.max.z - building.box.min.z, buildingColor);
     }
-}
-
-AABBVertex getAABBVerticesOfRect(Building *building)
-{
-    AABBVertex out = {0};
-    for (i32 i = 0; i < 8; i++)
-    {
-    }
-    return out;
 }
 
 void DrawBuildingModels(BuildingArray arr)

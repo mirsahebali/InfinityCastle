@@ -23,8 +23,9 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
     Vector3 farCenter = Vector3Add(camera.position, Vector3Scale(forward, zFar));
     Vector3 nearCenter = Vector3Add(camera.position, Vector3Scale(forward, zNear));
     
-    f32 tanFov = tanf(camera.fovy * 0.5 * DEG2RAD);
     
+    float bufferedFovy = camera.fovy + 10.0;
+    f32 tanFov = tanf(bufferedFovy * 0.5 * DEG2RAD);
     f32 nearHeight = zNear * tanFov;
     f32 nearWidth = aspect * nearHeight;
 
@@ -37,11 +38,9 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
     Vector3 farBottomLeft = Vector3Add(farCenter, Vector3Add(Vector3Scale(up, -farHeight), Vector3Scale(right, -farWidth)));
     Vector3 farBottomRight = Vector3Add(farCenter, Vector3Add(Vector3Scale(up, -farHeight), Vector3Scale(right, farWidth)));
 
-    // Near and Far planes
     frustum.nearFace = createPlane(nearCenter, forward);
     frustum.farFace = createPlane(farCenter, Vector3Negate(forward));
 
-    // Right Plane
     {
       Vector3 point1 = Vector3Subtract(farTopRight, camera.position);
       Vector3 point2 = Vector3Subtract(farBottomRight, camera.position);
@@ -49,7 +48,6 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
       frustum.rightFace = createPlane(camera.position, normal);
     }
 
-    // Left Plane
     {
       Vector3 point1 = Vector3Subtract(farBottomLeft, camera.position);
       Vector3 point2 = Vector3Subtract(farTopLeft, camera.position);
@@ -57,7 +55,6 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
       frustum.leftFace = createPlane(camera.position, normal);
     }
 
-    // Top Plane
     {
       Vector3 point1 = Vector3Subtract(farTopLeft, camera.position);
       Vector3 point2 = Vector3Subtract(farTopRight, camera.position);
@@ -65,7 +62,6 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
       frustum.topFace = createPlane(camera.position, normal);
     }
 
-    // Bottom Plane
     {
       Vector3 point1 = Vector3Subtract(farBottomRight, camera.position);
       Vector3 point2 = Vector3Subtract(farBottomLeft, camera.position);

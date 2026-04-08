@@ -1,5 +1,6 @@
 - [x] Frustum Culling Optimization
-- [ ] Increase Spacing between buildings
+- [x] Increase Spacing between buildings
+- [ ] Create 3D proc gen
 - [ ] Make sepratate building "regions"
     - [ ] Regions will contains stuff like:
         - Spiral Stairway

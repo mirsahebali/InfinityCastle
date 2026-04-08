@@ -20,13 +20,13 @@ typedef struct
 } CameraRays;
 
 // Uses Bresenham Algorithm
-RayIntersections DetectCollidedCells(Vector2 start, Vector2 end, i32 stepSize, i32 xSpacing, i32 ySpacing);
+RayIntersections DetectRayCollidedCells(Vector2 start, Vector2 end, i32 stepSize, i32 xSpacing, i32 ySpacing);
 
 RayIntersections GetRayCellIntersections(Ray r, Vector3Directions3D vecDir, i32 stepSize, i32 xSpacing, i32 ySpacing,
                                          f32 scale);
 
 CameraRays GenerateCameraRays(Camera camera, float distance);
 
-#define GetLineCellIntersections DetectCollidedCells
+#define GetLineCellIntersections DetectRayCollidedCells
 
 #endif // !RAYS_H

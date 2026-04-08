@@ -60,17 +60,17 @@ typedef struct
 {
     i32 left;
     i32 right;
-} UnMaskedBitsI32;
+} UnPackedBitsI32;
 
-static inline UnMaskedBitsI32 unMaskI32(u64 data)
+static inline UnPackedBitsI32 UnPackI32(u64 data)
 {
-    return (UnMaskedBitsI32){
+    return (UnPackedBitsI32){
         .right = (i32)(data),
         .left = (i32)(data >> 32) & 0xFFFFFFFF,
     };
 }
 
-static inline UnMaskedBitsI16 unMaskI16(u32 data)
+static inline UnMaskedBitsI16 UnPackI16(u32 data)
 {
     return (UnMaskedBitsI16){
         .right = (i16)(data),
@@ -78,14 +78,28 @@ static inline UnMaskedBitsI16 unMaskI16(u32 data)
     };
 }
 
-static inline u32 genUniqueU32(i16 left, i16 right)
+static inline u64 BitPackU64_3D(i16 x, i16 y, i16 z)
 {
-    return ((u32)(u16)left << 16) | (u16)right;
+    return ((u64)(u16)x << 32 | ((u64)(u16)y << 16) | (u64)(u16)z);
 }
 
-static inline u64 genUniqueU64(i32 left, i32 right)
+static inline CellValue3D UnPackU64_3D(u64 data)
+{
+    return (CellValue3D){
+        .x = (i16)(data >> 32),
+        .y = (i16)(data >> 16),
+        .z = (i16)(data),
+    };
+}
+
+static inline u64 BitPackU64(i32 left, i32 right)
 {
     return ((u64)(u32)left << 32) | (u32)right;
+}
+
+static inline u32 BitPackU32(i16 left, i16 right)
+{
+    return ((u32)(u16)left << 16) | (u16)right;
 }
 
 typedef enum
@@ -96,5 +110,7 @@ typedef enum
 } Vector3Directions3D;
 
 Vector2 Vec3ToVec2(Vector3, Vector3Directions3D);
+
+void DrawFPSFull(Vector2 position, int fontSize, int paddingX, int paddingY, Color color);
 
 #endif // !UTILS_H
