@@ -45,6 +45,8 @@ BoundingBox GenRandomBoundingBox2D(CellValue2D cell, i32 cellWidth, i32 cellHeig
 
 BoundingBox GenRandomBoundingBox3D(CellValue3D cell, i32 cellWidth, i32 cellHeight, i32 cellLength);
 
+Building GenRandomBuilding(CellValue3D cell, i32 cellWidth, i32 cellHeight, i32 cellLength);
+
 // DEPRECATED
 BuildingArray generateBuildings(Arena *arena, u32 width, u32 height, i32 offsetX, i32 offsetY, i32 spacing);
 

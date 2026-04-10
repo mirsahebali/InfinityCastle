@@ -14,6 +14,7 @@
  ********************************************************************************************/
 
 #include "culling.h"
+#include "mtypes.h"
 #include "planes.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -51,7 +52,7 @@
 #endif
 static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
-static const float FAR_PLANE = 1000.0f;
+static const float FAR_PLANE = 3000.0f;
 static const float NEAR_PLANE = 1.0f;
 static const float CAMERA_MOVEMENT_SPEED = 400.0f;
 static const float MOUSE_SENSITIVITY = 0.09f;
@@ -78,7 +79,7 @@ float mapWidth = 0.0f;
 float mapHeight = 0.0f;
 Vector2 mapOffset = {0};
 int rngSeed = 0;
-int chunkSize = 100;
+int chunkSize = 400;
 float delta = 0.0f;
 
 int main(void)
@@ -143,7 +144,7 @@ static void GameInit(void)
 
     rlSetClipPlanes(NEAR_PLANE, FAR_PLANE);
 
-    camera3D.position = VEC3(0, 200, 400);
+    camera3D.position = VEC3(0, 0, 400);
     camera3D.target = VEC3(0, 2, 20);
     camera3D.up = VEC3(0, 1, 0);
     camera3D.fovy = 45.0f;
@@ -194,10 +195,10 @@ static void GameControls(void)
         camera2D.zoom = 1.0f;
         camera2D.rotation = 0.0f;
 
-        camera3D.position = VEC3(0, 2, 400);
-        camera3D.target = VEC3(0, 0, 0);
+        camera3D.position = VEC3(0, 0, 400);
+        camera3D.target = VEC3(0, 2, 20);
         camera3D.up = VEC3(0, 1, 0);
-        camera3D.fovy = 60.0f;
+        camera3D.fovy = 45.0f;
         camera3D.projection = CAMERA_PERSPECTIVE;
     }
 
@@ -274,31 +275,23 @@ static void GameDraw(void)
         BeginMode3D(camera3D);
         {
             chunkCount = 0;
-            i16 minX = ((camera3D.position.x - FAR_PLANE) / chunkSize);
-            i16 maxX = ((camera3D.position.x + FAR_PLANE) / chunkSize);
+            i16 minX = floorf((camera3D.position.x - FAR_PLANE) / (float)chunkSize);
+            i16 maxX = floorf((camera3D.position.x + FAR_PLANE) / (float)chunkSize);
 
-            i16 minY = ((camera3D.position.y - FAR_PLANE) / chunkSize);
-            i16 maxY = ((camera3D.position.y + FAR_PLANE) / chunkSize);
+            i16 minY = floorf((camera3D.position.y - FAR_PLANE) / (float)chunkSize);
+            i16 maxY = floorf((camera3D.position.y + FAR_PLANE) / (float)chunkSize);
 
-            i16 minZ = ((camera3D.position.z - FAR_PLANE) / chunkSize);
-            i16 maxZ = ((camera3D.position.z + FAR_PLANE) / chunkSize);
+
+            i16 minZ = floorf((camera3D.position.z - FAR_PLANE) / (float)chunkSize);
+            i16 maxZ = floorf((camera3D.position.z + FAR_PLANE) / (float)chunkSize);
             for (i16 chunkCountX = minX; chunkCountX < maxX; chunkCountX++)
             {
-              for (i16 chunkCountY = minY; chunkCountY < maxY; chunkCountY++)
-              {
-                  for (i16 chunkCountZ = minZ; chunkCountZ < maxZ; chunkCountZ++)
-                  {
-                      Building building = {0};
-                      building.id = BitPackU32(chunkCountX, chunkCountZ);
-                      building.box = GenRandomBoundingBox3D((CellValue3D){chunkCountX, chunkCountY, chunkCountZ}, chunkSize, chunkSize, chunkSize);
-                      building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
-
-                      if(IsBoxInsideFrustum(&cameraFrustum, building.box))
-                      {
-                          chunkCount++;
-                          DrawFilledBoundingBox(building.box, map_building_type_to_color(building.bType));
-                          DrawBoundingBoxWires(building.box, BLACK);
-                      }
+                for (i16 chunkCountY = minY; chunkCountY < maxY; chunkCountY++)
+                {
+                    for (i16 chunkCountZ = minZ; chunkCountZ < maxZ; chunkCountZ++)
+                    {
+                        Building building = GenRandomBuilding((CellValue3D){chunkCountX, chunkCountY, chunkCountZ}, chunkSize, chunkSize, chunkSize);
+                        if(IsBoxInsideFrustum(&cameraFrustum, building.box)) { chunkCount++; DrawBuildingModel(building); }
                     }
                 }
             }
@@ -316,15 +309,20 @@ static void GameDraw(void)
     TextFormat("Target: (x = %.2f, y = %.2f, z = %.2f)", camera3D.target.x, camera3D.target.y, camera3D.target.z)
 #define fovAngleStr TextFormat("Angle: %.2f", camera3D.fovy)
 #define chunkStr TextFormat("Chunk Count: %d", chunkCount)
+#define chunkValueStr \
+  TextFormat("Chunk Value: (%d, %d, %d)", \
+  (i16)(camera3D.position.x / chunkSize), \
+  (i16)(camera3D.position.y / chunkSize), \
+  (i16)(camera3D.position.z / chunkSize))
 
     const int fontSize = 25;
     const int gapY = 5;
     const int cameraPositionStrWidth = MeasureText(cameraPositionStr, fontSize);
     const int cameraTargetStrWidth = MeasureText(cameraTargetStr, fontSize);
     const int rectWidth = cameraPositionStrWidth > cameraTargetStrWidth ? cameraPositionStrWidth : cameraTargetStrWidth;
-    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6, ColorAlpha(BLUE, 0.4f));
-    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6, ColorAlpha(WHITE, 0.4f));
-    DrawRectangleLinesEx(RECT(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 6), 3.0f, BLUE);
+    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 8, ColorAlpha(BLUE, 0.4f));
+    DrawRectangle(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 8, ColorAlpha(WHITE, 0.4f));
+    DrawRectangleLinesEx(RECT(GetScreenWidth() - rectWidth, 0, rectWidth, fontSize * 8), 3.0f, BLUE);
 
     DrawText(cameraPositionStr, GetScreenWidth() - MeasureText(cameraPositionStr, fontSize), gapY, fontSize, BLACK);
     DrawText(cameraTargetStr, GetScreenWidth() - MeasureText(cameraTargetStr, fontSize), fontSize + (2 * gapY),
@@ -334,6 +332,8 @@ static void GameDraw(void)
     DrawText(fovAngleStr, GetScreenWidth() - MeasureText(fovAngleStr, fontSize), (fontSize * 3) + (4 * gapY), fontSize,
              BLACK);
     DrawText(chunkStr, GetScreenWidth() - MeasureText(chunkStr, fontSize), (fontSize * 4) + (5 * gapY), fontSize,
+             BLACK);
+    DrawText(chunkValueStr, GetScreenWidth() - MeasureText(chunkValueStr, fontSize), (fontSize * 5) + (6 * gapY), fontSize,
              BLACK);
 
     DrawFPSFull(VEC2(8, 8), 20, 5, 5, BLACK);

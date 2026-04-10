@@ -7,6 +7,7 @@
 #include "mtypes.h"
 #include "raylib.h"
 
+#include "rng.h"
 #include "utils.h"
 
 #include "carena.h"
@@ -14,6 +15,11 @@
 #include <raymath.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#define SetRandomSeed(seed) SetRNGSeed(&rngState, seed, 69);
+#define GetRandomValue(min, max) GetRNGRange(&rngState, min, max)
+
+PCGState128 rngState;
 
 Color map_building_type_to_color(BuildingType t)
 {
@@ -46,8 +52,8 @@ Color map_building_type_to_color(BuildingType t)
 static const Vector2 OFFSET_SCALING_FORWARD = {0.3f, 0.3f};
 static const Vector2 OFFSET_SCALING_BACKWARD = {0.2f, 0.2f};
 
-static const Vector3 OFFSET_SCALING_FORWARD_3D = {0.3f, 0.3f, 0.3f};
-static const Vector3 OFFSET_SCALING_BACKWARD_3D = {0.3f, 0.3f, 0.3f};
+static const Vector3 OFFSET_SCALING_FORWARD_3D = {0.5f, 0.5f, 0.5f};
+static const Vector3 OFFSET_SCALING_BACKWARD_3D = {0.5f, 0.5f, 0.5f};
 Rectangle genRandomBuilding2D(Vector2 cell, i32 cellWidth, i32 cellHeight)
 {
     SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));
@@ -98,23 +104,20 @@ BoundingBox GenRandomBoundingBox2D(CellValue2D cell, i32 cellWidth, i32 cellHeig
 BoundingBox GenRandomBoundingBox3D(CellValue3D cell, i32 cellWidth, i32 cellLength, i32 cellHeight)
 {
     BoundingBox out = {0};
-    SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));
+    SetRandomSeed(BitPackU64_3D(cell.x, cell.y, cell.z));
     Vector3 minPos = {0};
     minPos.x = cell.x * cellWidth;
     minPos.y = cell.y * cellHeight;
     minPos.z = cell.z * cellLength;
 
-    Vector3 maxPos = Vector3Add(minPos,
-                                VEC3(cellWidth  *  (1 - OFFSET_SCALING_BACKWARD_3D.x),
-                                     cellHeight *  (1 - OFFSET_SCALING_BACKWARD_3D.y),
-                                     cellLength *  (1 - OFFSET_SCALING_BACKWARD_3D.z)));
-    out.min.x = GetRandomValue(minPos.x, minPos.x + (cellWidth * OFFSET_SCALING_FORWARD_3D.x));
-    out.min.y = GetRandomValue(minPos.y, minPos.y + (cellHeight * OFFSET_SCALING_FORWARD_3D.y));
-    out.min.z = GetRandomValue(minPos.z, minPos.z + (cellLength * OFFSET_SCALING_FORWARD_3D.z));
+    Vector3 maxPos = Vector3Add(minPos, VEC3(cellWidth, cellHeight, cellLength));
+    out.min.x = (f32)GetRandomValue(minPos.x, minPos.x + (cellWidth  * OFFSET_SCALING_FORWARD_3D.x));
+    out.min.y = (f32)GetRandomValue(minPos.y, minPos.y + (cellHeight * OFFSET_SCALING_FORWARD_3D.y));
+    out.min.z = (f32)GetRandomValue(minPos.z, minPos.z + (cellLength * OFFSET_SCALING_FORWARD_3D.z));
 
-    out.max.x = GetRandomValue(maxPos.x, maxPos.x - (cellWidth * OFFSET_SCALING_BACKWARD_3D.x));
-    out.max.y = GetRandomValue(maxPos.y, maxPos.y - (cellHeight * OFFSET_SCALING_BACKWARD_3D.y));
-    out.max.z = GetRandomValue(maxPos.z, maxPos.z - (cellLength * OFFSET_SCALING_BACKWARD_3D.z));
+    out.max.x = (f32)GetRandomValue(maxPos.x, maxPos.x - (cellWidth  * OFFSET_SCALING_BACKWARD_3D.x));
+    out.max.y = (f32)GetRandomValue(maxPos.y, maxPos.y - (cellHeight * OFFSET_SCALING_BACKWARD_3D.y));
+    out.max.z = (f32)GetRandomValue(maxPos.z, maxPos.z - (cellLength * OFFSET_SCALING_BACKWARD_3D.z));
 
     return out;
 }
@@ -174,7 +177,8 @@ void DrawBuildingModels(BuildingArray arr)
 
 void DrawBuildingModel(Building building)
 {
-    DrawBoundingBox(building.box, map_building_type_to_color(building.bType));
+    DrawFilledBoundingBox(building.box, map_building_type_to_color(building.bType));
+    DrawBoundingBoxWires(building.box, BLACK);
 }
 
 void DrawFilledBoundingBox(BoundingBox box, Color color)
@@ -197,4 +201,14 @@ void DrawBoundingBoxWires(BoundingBox box, Color color)
     Vector3 pos = box.min;
 
     DrawCubeWires(pos, width, height, depth, color);
+}
+
+Building GenRandomBuilding(CellValue3D cell, i32 cellWidth, i32 cellHeight, i32 cellLength)
+{
+    Building building = {0};
+    building.id = BitPackU64_3D(cell.x, cell.y, cell.z);
+    building.box = GenRandomBoundingBox3D(cell, cellWidth, cellHeight, cellLength);
+    building.bType = GetRandomValue(BUILDING_TYPE_1, BUILDING_TYPE_COUNT - 1);
+
+    return building;
 }

@@ -5,9 +5,12 @@
 #include <raylib.h>
 
 #define VEC2(_x, _y) ((Vector2){.x = (f32)(_x), .y = (f32)(_y)})
-#define VEC2_STR(v) (TextFormat("Vector2( x = %f, y = %f, z = %f )", v.x, v.y, v.z))
 #define VEC3(_x, _y, _z) ((Vector3){.x = (f32)(_x), .y = (f32)(_y), .z = (f32)(_z)})
 #define VEC4(_x, _y, _z, _w) ((Vector4){.x = (f32)(_x), .y = (f32)(_y), .z = (f32)(_z), .w = (f32)(_w)})
+
+#define VEC2_STR(v) (TextFormat("Vector2( x = %f, y = %f )", v.x, v.y))
+#define VEC3_STR(v) (TextFormat("Vector3( x = %f, y = %f, z = %f )", v.x, v.y, v.z))
+
 
 #define RECT(_x, _y, _width, _height)                                                                                  \
     ((Rectangle){.x = (f32)(_x), .y = (f32)(_y), .width = (f32)(_width), .height = (f32)(_height)})

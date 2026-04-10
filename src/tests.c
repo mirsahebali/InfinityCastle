@@ -13,6 +13,7 @@
 #include "path_ways.h"
 #include "raylib.h"
 #include "rays.h"
+#include "rng.h"
 #include "utils.h"
 
 static int testCount = 0;
@@ -172,6 +173,44 @@ void testUnmaskBits(void)
     }
 }
 
+void testIDU643DGeneration(void)
+{
+    int width = 50;
+    int height = 50;
+    int length = 50;
+    Arena arena = arena_init(100 << 20);
+    u64 *array = ARRAY_INIT(&arena, u64);
+
+    for (int z = -length; z < length; z++)
+    {
+      for (int y = -height; y < height; y++)
+      {
+          for (int x = -width; x < width; x++)
+          {
+              uint64_t uID = BitPackU64_3D(x, y, z);
+              array = ARRAY_PUSH(array, u64, &uID);
+          }
+      }
+    }
+
+    int count = ARRAY_LENGTH(array, u64);
+    int dups = 0;
+
+    qsort(array, count, sizeof(u64), cmp_uint64);
+
+    for (int i = 1; i < count; i++)
+    {
+        if (array[i] == array[i - 1])
+        {
+            dups++;
+        }
+    }
+
+    printf("dups = %d\n", dups);
+    assert(dups == 0);
+    arena_destroy(&arena);
+}
+
 void testRayPlaneIntersection(void)
 {
     RayIntersections intersections = GetLineCellIntersections(VEC2(89, 22), VEC2(0, 5), 1, 1, 1);
@@ -182,14 +221,32 @@ void testRayPlaneIntersection(void)
     }
 }
 
+void testPCGRNGImplementation(void)
+{
+    PCGState128 state;
+
+    for (i32 i = 0; i < 1000; i++) {
+      SetRNGSeed(&state, time(NULL), 2229999);
+      i64 low = -10;
+      i64 high = 10;
+      i64 rangedRNG = GetRNGRange(&state, low, high);
+      printf("RNG range value for %d [%ld: %ld] is %ld\n", i, low, high, rangedRNG);
+      assert(rangedRNG >= low && rangedRNG <= high);
+      printf("RNG value for %d is %zu\n", i, GetRNGValue(&state));
+    }
+}
+
+
 void runTests(void)
 {
     printf("Running tests...\n");
     fnRun("test adjacency list", testAjdGraphList);
     fnRun("test unique i64 id generation", testID64Generation);
     fnRun("test unique i32 id generation", testID32Generation);
+    fnRun("test unique u64 3d id generation", testIDU643DGeneration);
     fnRun("test unique unmasking", testUnmaskBits);
     fnRun("test ray plane intersection", testRayPlaneIntersection);
+    fnRun("test pcg rng implementation", testPCGRNGImplementation);
     endTests();
 }
 
