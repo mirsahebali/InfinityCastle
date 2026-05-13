@@ -52,8 +52,8 @@ Color map_building_type_to_color(BuildingType t)
 static const Vector2 OFFSET_SCALING_FORWARD = {0.3f, 0.3f};
 static const Vector2 OFFSET_SCALING_BACKWARD = {0.2f, 0.2f};
 
-static const Vector3 OFFSET_SCALING_FORWARD_3D = {0.5f, 0.5f, 0.5f};
-static const Vector3 OFFSET_SCALING_BACKWARD_3D = {0.5f, 0.5f, 0.5f};
+static const Vector3 OFFSET_SCALING_FORWARD_3D = {0.2f, 0.2f, 0.2f};
+static const Vector3 OFFSET_SCALING_BACKWARD_3D = {0.7f, 0.7f, 0.7f};
 Rectangle genRandomBuilding2D(Vector2 cell, i32 cellWidth, i32 cellHeight)
 {
     SetRandomSeed(BitPackU32((i16)cell.x, (i16)cell.y));

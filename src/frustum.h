@@ -21,6 +21,6 @@ typedef struct Frustum
     Plane nearFace;
 } Frustum;
 
-Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar);
+Frustum CreateFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar);
 
 #endif // !PLANES_H

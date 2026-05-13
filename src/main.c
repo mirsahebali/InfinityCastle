@@ -15,7 +15,7 @@
 
 #include "culling.h"
 #include "mtypes.h"
-#include "planes.h"
+#include "frustum.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rays.h"
@@ -84,6 +84,7 @@ float delta = 0.0f;
 
 int main(void)
 {
+  
 #if defined(RUN_TESTS)
     runTests();
     return 0;
@@ -162,7 +163,7 @@ static void GameInit(void)
     mapScale = 0.5f;
 
     arena = arena_init(20 << 20); // 20 MB
-    cameraFrustum = createFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+    cameraFrustum = CreateFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
 
 }
 
@@ -245,17 +246,20 @@ static void GameControls(void)
 
     UpdateCameraPro(
         &camera3D,
-        VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move forward-backward
-             (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * (CAMERA_MOVEMENT_SPEED * delta),
-             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move right-left
-             (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * (CAMERA_MOVEMENT_SPEED * delta),
-             IsKeyDown(KEY_K) * (CAMERA_MOVEMENT_SPEED * delta) - // Move up-down
-             IsKeyDown(KEY_J) * (CAMERA_MOVEMENT_SPEED * delta)), 
-        VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY,                   // Rotation: yaw
-             GetMouseDelta().y * MOUSE_SENSITIVITY,                   // Rotation: pitch
-             0.0f                                                     // Rotation: roll
-             ),
-        GetMouseWheelMove() * ZOOM_SCALING); // Move to target (zoom)
+        VEC3((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP   )) * (CAMERA_MOVEMENT_SPEED * delta) - // Move right-left
+             (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN )) * (CAMERA_MOVEMENT_SPEED * delta),
+             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * (CAMERA_MOVEMENT_SPEED * delta) - // Move forward-backward
+             (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT )) * (CAMERA_MOVEMENT_SPEED * delta),
+              IsKeyDown(KEY_K)                          * (CAMERA_MOVEMENT_SPEED * delta) - // Move up-down
+              IsKeyDown(KEY_J)                          * (CAMERA_MOVEMENT_SPEED * delta)), 
+        VEC3(GetMouseDelta().x * MOUSE_SENSITIVITY, // Rotation: yaw
+             GetMouseDelta().y * MOUSE_SENSITIVITY, // Rotation: pitch
+             0.0f),                                 // Rotation: roll
+        GetMouseWheelMove() * ZOOM_SCALING);        // Move to target (zoom)
+
+    if(IsKeyPressed(KEY_O)) camera3D.fovy -= 5.0;
+    if(IsKeyPressed(KEY_P)) camera3D.fovy += 5.0;
+    
 }
 static void GameUpdate(void)
 {
@@ -264,7 +268,7 @@ static void GameUpdate(void)
         isMapChanged = false;
     }
 
-    cameraFrustum = createFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
+    cameraFrustum = CreateFrustumFromCamera(camera3D, SCREEN_WIDTH/(float)SCREEN_HEIGHT, NEAR_PLANE, FAR_PLANE);
 }
 
 static void GameDraw(void)

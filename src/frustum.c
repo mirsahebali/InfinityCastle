@@ -1,10 +1,10 @@
-#include "planes.h"
-
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 
-Plane createPlane(Vector3 point, Vector3 normal)
+#include "frustum.h"
+
+Plane CreatePlane(Vector3 point, Vector3 normal)
 {
     Plane p = {0};
     p.normal = Vector3Normalize(normal);
@@ -12,7 +12,7 @@ Plane createPlane(Vector3 point, Vector3 normal)
     return p;
 }
 
-Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar)
+Frustum CreateFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar)
 {
     Frustum frustum = {0};
     Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
@@ -38,35 +38,35 @@ Frustum createFrustumFromCamera(Camera3D camera, f32 aspect, f32 zNear, f32 zFar
     Vector3 farBottomLeft = Vector3Add(farCenter, Vector3Add(Vector3Scale(up, -farHeight), Vector3Scale(right, -farWidth)));
     Vector3 farBottomRight = Vector3Add(farCenter, Vector3Add(Vector3Scale(up, -farHeight), Vector3Scale(right, farWidth)));
 
-    frustum.nearFace = createPlane(nearCenter, forward);
-    frustum.farFace = createPlane(farCenter, Vector3Negate(forward));
+    frustum.nearFace = CreatePlane(nearCenter, forward);
+    frustum.farFace = CreatePlane(farCenter, Vector3Negate(forward));
 
     {
       Vector3 point1 = Vector3Subtract(farTopRight, camera.position);
       Vector3 point2 = Vector3Subtract(farBottomRight, camera.position);
       Vector3 normal = Vector3Normalize(Vector3CrossProduct(point1, point2));
-      frustum.rightFace = createPlane(camera.position, normal);
+      frustum.rightFace = CreatePlane(camera.position, normal);
     }
 
     {
       Vector3 point1 = Vector3Subtract(farBottomLeft, camera.position);
       Vector3 point2 = Vector3Subtract(farTopLeft, camera.position);
       Vector3 normal = Vector3Normalize(Vector3CrossProduct(point1, point2));
-      frustum.leftFace = createPlane(camera.position, normal);
+      frustum.leftFace = CreatePlane(camera.position, normal);
     }
 
     {
       Vector3 point1 = Vector3Subtract(farTopLeft, camera.position);
       Vector3 point2 = Vector3Subtract(farTopRight, camera.position);
       Vector3 normal = Vector3Normalize(Vector3CrossProduct(point1, point2));
-      frustum.topFace = createPlane(camera.position, normal);
+      frustum.topFace = CreatePlane(camera.position, normal);
     }
 
     {
       Vector3 point1 = Vector3Subtract(farBottomRight, camera.position);
       Vector3 point2 = Vector3Subtract(farBottomLeft, camera.position);
       Vector3 normal = Vector3Normalize(Vector3CrossProduct(point1, point2));
-      frustum.bottomFace = createPlane(camera.position, normal);
+      frustum.bottomFace = CreatePlane(camera.position, normal);
     }
 
     return frustum;

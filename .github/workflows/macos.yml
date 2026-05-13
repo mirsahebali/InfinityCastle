@@ -7,7 +7,7 @@ on:
       - 'src/**'
       - '.github/workflows/macos.yml'
   release:
-    types: [published]
+    types: [published, release]
 
 permissions:
   contents: read

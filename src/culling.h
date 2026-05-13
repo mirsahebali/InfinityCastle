@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include <stdbool.h>
 
-#include "planes.h"
+#include "frustum.h"
 
 bool IsPointInsidePlane(Plane plane, Vector3 point);
 bool IsPointInsideFrustum(const Frustum *frustum, Vector3 point);
